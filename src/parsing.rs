@@ -444,12 +444,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
                             None => return self.error(InvalidUnicodeCodePoint),
                         },
                     },
-                    c =>
-                        if c == end_char {
-                            res.push(end_char)
-                        } else {
-                            return self.error(InvalidEscape)
-                        }
+                    c => res.push(c)
                 }
                 escape = false;
             } else if self.ch_is('\\') {
