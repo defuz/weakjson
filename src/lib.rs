@@ -1,8 +1,6 @@
-#![feature(unicode, io, old_io)]
 #![cfg_attr(test, feature(test))]
 
 extern crate "rustc-serialize" as rustc_serialize;
-extern crate unicode;
 
 use rustc_serialize::json::Json;
 use rustc_serialize::json::JsonEvent;
@@ -27,9 +25,6 @@ use std::num::{Float, Int};
 use std::string;
 use std::{char, io, str};
 
-use unicode::str as unicode_str;
-use unicode::str::Utf16Item;
-
 /// Shortcut function to decode a JSON `&str` into an object
 pub fn decode_non_strict<T: Decodable>(s: &str) -> Result<T, DecoderError> {
     let json = match json_from_str_non_strict(s) {
@@ -42,9 +37,7 @@ pub fn decode_non_strict<T: Decodable>(s: &str) -> Result<T, DecoderError> {
 }
 
 fn io_error_to_error(err: io::Error) -> ParserError {
-    // fixme: remove old_io
-    use std::old_io::IoErrorKind;
-    IoError(IoErrorKind::EndOfFile, "")
+    IoError(err)
 }
 
 /// Decodes a json value from an `&mut io::Read`
@@ -532,11 +525,13 @@ impl<T: Iterator<Item = char>> Parser<T> {
                                 _ => return self.error(UnexpectedEndOfHexEscape),
                             }
 
-                            let buf = [n1, try!(self.decode_hex_escape())];
-                            match unicode_str::utf16_items(&buf).next() {
-                                Some(Utf16Item::ScalarValue(c)) => res.push(c),
-                                _ => return self.error(LoneLeadingSurrogateInHexEscape),
+                            let n2 = try!(self.decode_hex_escape());
+                            if n2 < 0xDC00 || n2 > 0xDFFF {
+                                return self.error(LoneLeadingSurrogateInHexEscape)
                             }
+                            let c = (((n1 - 0xD800) as u32) << 10 |
+                                     (n2 - 0xDC00) as u32) + 0x1_0000;
+                            res.push(char::from_u32(c).unwrap());
                         }
 
                         n => match char::from_u32(n as u32) {
