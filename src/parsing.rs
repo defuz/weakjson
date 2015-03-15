@@ -13,7 +13,7 @@ use parsing::InternalStackElement::*;
 
 use std::collections::BTreeMap;
 use std::num::{Float, Int};
-use std::{char, str, mem};
+use std::{char, str, mem, f64};
 
 #[derive(PartialEq, Debug)]
 enum ParserState {
@@ -225,45 +225,82 @@ impl<T: Iterator<Item = char>> Parser<T> {
             self.bump();
         }
 
-        let res = match self.parse_u64() {
-            Ok(res) => res,
-            Err(e) => { return Error(e); }
-        };
-
-        if self.ch_is('.') || self.ch_is('e') || self.ch_is('E') {
-            let mut res = res as f64;
-
-            if self.ch_is('.') {
-                res = match self.parse_decimal(res) {
-                    Ok(res) => res,
-                    Err(e) => { return Error(e); }
-                };
-            }
-
-            if self.ch_is('e') || self.ch_is('E') {
-                res = match self.parse_exponent(res) {
-                    Ok(res) => res,
-                    Err(e) => { return Error(e); }
-                };
-            }
-
-            if neg {
-                res *= -1.0;
-            }
-
-            F64Value(res)
-        } else {
-            if neg {
-                let res = -(res as i64);
-
-                // Make sure we didn't underflow.
-                if res > 0 {
-                    Error(SyntaxError(InvalidNumber, self.line, self.col))
+        match self.ch_or_null() {
+            'N' => self.parse_ident("aN", F64Value(f64::NAN)),
+            'I' => self.parse_ident("nfinity", F64Value(
+                if neg {
+                    f64::NEG_INFINITY
                 } else {
-                    I64Value(res)
+                    f64::INFINITY
                 }
-            } else {
-                U64Value(res)
+            )),
+            '.' => {
+                self.bump();
+
+                // Make sure a digit follows the decimal place.
+                match self.ch_or_null() {
+                    '0' ... '9' => (),
+                     _ => return Error(SyntaxError(InvalidNumber, self.line, self.col))
+                }
+
+                let mut res = self.parse_decimal(0.0);
+
+                if self.ch_is('e') || self.ch_is('E') {
+                    self.bump();
+                    res = match self.parse_exponent(res) {
+                        Ok(res) => res,
+                        Err(e) => { return Error(e); }
+                    };
+                }
+
+                if neg {
+                    res *= -1.0;
+                }
+
+                F64Value(res)
+            }
+            _ => {
+
+                let res = match self.parse_u64() {
+                    Ok(res) => res,
+                    Err(e) => { return Error(e); }
+                };
+
+                if self.ch_is('.') || self.ch_is('e') || self.ch_is('E') {
+                    let mut res = res as f64;
+
+                    if self.ch_is('.') {
+                        self.bump();
+                        res = self.parse_decimal(res)
+                    }
+
+                    if self.ch_is('e') || self.ch_is('E') {
+                        self.bump();
+                        res = match self.parse_exponent(res) {
+                            Ok(res) => res,
+                            Err(e) => { return Error(e); }
+                        };
+                    }
+
+                    if neg {
+                        res *= -1.0;
+                    }
+
+                    F64Value(res)
+                } else {
+                    if neg {
+                        let res = -(res as i64);
+
+                        // Make sure we didn't underflow.
+                        if res > 0 {
+                            Error(SyntaxError(InvalidNumber, self.line, self.col))
+                        } else {
+                            I64Value(res)
+                        }
+                    } else {
+                        U64Value(res)
+                    }
+                }
             }
         }
     }
@@ -299,15 +336,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
         Ok(accum)
     }
 
-    fn parse_decimal(&mut self, mut res: f64) -> Result<f64, ParserError> {
-        self.bump();
-
-        // Make sure a digit follows the decimal place.
-        match self.ch_or_null() {
-            '0' ... '9' => (),
-             _ => return self.error(InvalidNumber)
-        }
-
+    fn parse_decimal(&mut self, mut res: f64) -> f64 {
         let mut dec = 1.0;
         while !self.eof() {
             match self.ch_or_null() {
@@ -320,12 +349,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
             }
         }
 
-        Ok(res)
+        res
     }
 
     fn parse_exponent(&mut self, mut res: f64) -> Result<f64, ParserError> {
-        self.bump();
-
         let mut exp = 0;
         let mut neg_exp = false;
 
@@ -647,7 +674,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
             'n' => { self.parse_ident("ull", NullValue) }
             't' => { self.parse_ident("rue", BooleanValue(true)) }
             'f' => { self.parse_ident("alse", BooleanValue(false)) }
-            '0' ... '9' | '-' | '+' => self.parse_number(),
+            '0' ... '9' | '-' | '+' | 'N' | 'I' | '.' => self.parse_number(),
             '"' | '\'' => match self.parse_str() {
                 Ok(s) => StringValue(s),
                 Err(e) => Error(e),

@@ -3,10 +3,13 @@ use rustc_serialize::json::Json::*;
 use rustc_serialize::json::ErrorCode::*;
 use rustc_serialize::json::ParserError::*;
 
+use std::f64;
+
 #[test]
 fn test_single_quote_string() {
     assert_eq!(super::json_from_str_non_strict("'"), Err(SyntaxError(EOFWhileParsingString, 1, 2)));
     assert_eq!(super::json_from_str_non_strict("'lol"), Err(SyntaxError(EOFWhileParsingString, 1, 5)));
+
     assert_eq!(super::json_from_str_non_strict("''"), Ok(String("".to_string())));
     assert_eq!(super::json_from_str_non_strict("'foo'"), Ok(String("foo".to_string())));
     assert_eq!(super::json_from_str_non_strict("'foo\\'bar'"), Ok(String("foo'bar".to_string())));
@@ -20,6 +23,8 @@ fn test_ignore_invalid_escaping() {
 
 #[test]
 fn test_multiline_string() {
+    assert_eq!(super::json_from_str_non_strict("\"\n\""), Ok(String("\n".to_string())));
+    assert_eq!(super::json_from_str_non_strict("\"\n\n\""), Ok(String("\n\n".to_string())));
     assert_eq!(super::json_from_str_non_strict("\"foo\nbar\""), Ok(String("foo\nbar".to_string())));
     assert_eq!(super::json_from_str_non_strict("\"foo\\\nbar\""), Ok(String("foo\nbar".to_string())));
 }
@@ -32,7 +37,6 @@ fn test_number_with_plus_sign() {
     assert_eq!(super::json_from_str_non_strict("+0.4e5"), Ok(F64(0.4e5)));
     assert_eq!(super::json_from_str_non_strict("+0.4e+15"), Ok(F64(0.4e15)));
     assert_eq!(super::json_from_str_non_strict("+0.4e-01"), Ok(F64(0.4e-01)));
-    assert_eq!(super::json_from_str_non_strict(" +3 "), Ok(U64(3)));
 }
 
 #[test]
@@ -47,7 +51,41 @@ fn test_trailing_zeros() {
     assert_eq!(super::json_from_str_non_strict("0.4e-1"), Ok(F64(0.4e-01)));
 }
 
+#[test]
+fn test_infinity_and_nan() {
+    match super::json_from_str_non_strict("NaN") {
+        Ok(F64(x)) => assert!(x != x, "Unable to parse NaN"),
+        _ => panic!("Unable to parse NaN")
+    }
+    match super::json_from_str_non_strict("+NaN") {
+        Ok(F64(x)) => assert!(x != x, "Unable to parse +NaN"),
+        _ => panic!("Unable to parse +NaN")
+    }
+    match super::json_from_str_non_strict("-NaN") {
+        Ok(F64(x)) => assert!(x != x, "Unable to parse -NaN"),
+        _ => panic!("Unable to parse -NaN")
+    }
 
+    assert_eq!(super::json_from_str_non_strict("Infinity"), Ok(F64(f64::INFINITY)));
+    assert_eq!(super::json_from_str_non_strict("+Infinity"), Ok(F64(f64::INFINITY)));
+    assert_eq!(super::json_from_str_non_strict("-Infinity"), Ok(F64(f64::NEG_INFINITY)));
+}
+
+#[test]
+fn test_leading_and_trailing_decimal_point() {
+    assert_eq!(super::json_from_str_non_strict("3."), Ok(F64(3.0)));
+    assert_eq!(super::json_from_str_non_strict(".1"), Ok(F64(0.1)));
+    assert_eq!(super::json_from_str_non_strict("+.1"), Ok(F64(0.1)));
+    assert_eq!(super::json_from_str_non_strict("-.1"), Ok(F64(-0.1)));
+
+    assert_eq!(super::json_from_str_non_strict("0."), Ok(F64(0.0)));
+    assert_eq!(super::json_from_str_non_strict(".0"), Ok(F64(0.0)));
+    assert_eq!(super::json_from_str_non_strict("+0."), Ok(F64(0.0)));
+    assert_eq!(super::json_from_str_non_strict("-.0"), Ok(F64(0.0)));
+
+    assert_eq!(super::json_from_str_non_strict("3.e5"), Ok(F64(3.0e5)));
+    assert_eq!(super::json_from_str_non_strict(".1e5"), Ok(F64(0.1e5)));
+}
 
 // #[test]
 // fn test_trailing_comma_in_array() {

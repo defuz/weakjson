@@ -27,8 +27,8 @@ The library is still under development. Please don't use it.
 
 ##### Numbers:
 
-- [ ] Numbers can be hexadecimal (base 16).
-- [ ] Numbers can begin or end with a (leading or trailing) decimal point.
-- [ ] Numbers can include Infinity, -Infinity, NaN, and -NaN.
+- [x] Numbers can include Infinity, -Infinity, NaN, and -NaN.
 - [x] Numbers can begin with an explicit plus sign.
 - [x] Numbers can begin with leading zero digits.
+- [x] Numbers can begin or end with a (leading or trailing) decimal point.
+- [ ] Numbers can be hexadecimal (base 16).

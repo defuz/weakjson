@@ -68,10 +68,8 @@ fn test_decode_identifiers() {
 #[test]
 fn test_read_number() {
     assert_eq!(super::json_from_str_non_strict("+"),   Err(SyntaxError(InvalidNumber, 1, 2)));
-    assert_eq!(super::json_from_str_non_strict("."),   Err(SyntaxError(InvalidSyntax, 1, 1)));
-    assert_eq!(super::json_from_str_non_strict("NaN"), Err(SyntaxError(InvalidSyntax, 1, 1)));
+    assert_eq!(super::json_from_str_non_strict("."),   Err(SyntaxError(InvalidNumber, 1, 2)));
     assert_eq!(super::json_from_str_non_strict("-"),   Err(SyntaxError(InvalidNumber, 1, 2)));
-    assert_eq!(super::json_from_str_non_strict("1."),  Err(SyntaxError(InvalidNumber, 1, 3)));
     assert_eq!(super::json_from_str_non_strict("1e"),  Err(SyntaxError(InvalidNumber, 1, 3)));
     assert_eq!(super::json_from_str_non_strict("1e+"), Err(SyntaxError(InvalidNumber, 1, 4)));
 
