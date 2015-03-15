@@ -221,6 +221,8 @@ impl<T: Iterator<Item = char>> Parser<T> {
         if self.ch_is('-') {
             self.bump();
             neg = true;
+        } else if self.ch_is('+') {
+            self.bump();
         }
 
         let res = match self.parse_u64() {
@@ -270,16 +272,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
         let mut accum = 0;
 
         match self.ch_or_null() {
-            '0' => {
-                self.bump();
-
-                // A leading '0' must be the only digit before the decimal point.
-                match self.ch_or_null() {
-                    '0' ... '9' => return self.error(InvalidNumber),
-                    _ => ()
-                }
-            },
-            '1' ... '9' => {
+            '0' ... '9' => {
                 while !self.eof() {
                     match self.ch_or_null() {
                         c @ '0' ... '9' => {
@@ -654,7 +647,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
             'n' => { self.parse_ident("ull", NullValue) }
             't' => { self.parse_ident("rue", BooleanValue(true)) }
             'f' => { self.parse_ident("alse", BooleanValue(false)) }
-            '0' ... '9' | '-' => self.parse_number(),
+            '0' ... '9' | '-' | '+' => self.parse_number(),
             '"' | '\'' => match self.parse_str() {
                 Ok(s) => StringValue(s),
                 Err(e) => Error(e),
