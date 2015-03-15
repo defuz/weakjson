@@ -2,7 +2,14 @@
 
 name = "weakjson"
 version = "0.0.1"
-authors = ["Ivan Ivaschenko <defuz.net@gmail.com>"]
+description = "Library for parsing bad JSON"
+authors = ["Ivan Ivaschenko <defuz@me.com>"]
+
+repository = "http://github.com/defuz/weakjson"
+
+keywords = ["json", "parsing", "serialize", "formats"]
+
+license = "MIT"
 
 [dependencies]
 rustc-serialize = "0.3"
