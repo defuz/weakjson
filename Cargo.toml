@@ -1,8 +1,8 @@
 [package]
 
-name = "non-strict-json"
+name = "weakjson"
 version = "0.0.1"
-authors = ["defuz <defuz.net@gmail.com>"]
+authors = ["Ivan Ivaschenko <defuz.net@gmail.com>"]
 
 [dependencies]
 rustc-serialize = "0.3"
