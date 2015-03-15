@@ -1,5 +1,7 @@
 ### weakjson
 
+[![Build Status](https://travis-ci.org/defuz/weakjson.svg?branch=master)](https://travis-ci.org/defuz/weakjson)
+
 The library is still under development. Please don't use it.
 
 ##### Comments:
