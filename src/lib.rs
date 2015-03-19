@@ -26,8 +26,8 @@ use rustc_serialize::json::ErrorCode;
 use std::{str, io};
 
 /// Shortcut function to decode a JSON `&str` into an object
-pub fn decode_non_strict<T: Decodable>(s: &str) -> Result<T, DecoderError> {
-    let json = match json_from_str_non_strict(s) {
+pub fn decode<T: Decodable>(s: &str) -> Result<T, DecoderError> {
+    let json = match from_str(s) {
         Ok(x) => x,
         Err(e) => return Err(DecoderError::ParseError(e))
     };
@@ -36,17 +36,13 @@ pub fn decode_non_strict<T: Decodable>(s: &str) -> Result<T, DecoderError> {
     Decodable::decode(&mut decoder)
 }
 
-fn io_error_to_error(err: io::Error) -> ParserError {
-    ParserError::IoError(err)
-}
-
 /// Decodes a json value from an `&mut io::Read`
-pub fn json_from_reader_non_strict(rdr: &mut io::Read) -> Result<Json, BuilderError> {
+pub fn from_reader(rdr: &mut io::Read) -> Result<Json, BuilderError> {
     let contents = {
         let mut c = Vec::new();
         match rdr.read_to_end(&mut c) {
             Ok(_)  => (),
-            Err(e) => return Err(io_error_to_error(e))
+            Err(e) => return Err(ParserError::IoError(e))
         }
         c
     };
@@ -59,7 +55,7 @@ pub fn json_from_reader_non_strict(rdr: &mut io::Read) -> Result<Json, BuilderEr
 }
 
 /// Decodes a json value from a string
-pub fn json_from_str_non_strict(s: &str) -> Result<Json, BuilderError> {
+pub fn from_str(s: &str) -> Result<Json, BuilderError> {
     let mut builder = Builder::new(s.chars());
     builder.build()
 }
