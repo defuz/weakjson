@@ -148,7 +148,10 @@ impl<T: Iterator<Item = char>> Iterator for Parser<T> {
         }
 
         if self.state == ParseBeforeFinish {
-            self.parse_whitespace();
+            match self.parse_whitespace_or_comments() {
+                Err(e) => return Some(self.error_event(e)),
+                _ => ()
+            }
             // Make sure there is no trailing characters.
             if self.eof() {
                 self.state = ParseFinished;
@@ -208,11 +211,48 @@ impl<T: Iterator<Item = char>> Parser<T> {
         Err(SyntaxError(reason, self.line, self.col))
     }
 
-    fn parse_whitespace(&mut self) {
-        while self.ch_is(' ') ||
-              self.ch_is('\n') ||
-              self.ch_is('\t') ||
-              self.ch_is('\r') { self.bump(); }
+    fn parse_whitespace_or_comments(&mut self) -> Result<(), ErrorCode> {
+        loop {
+            match self.ch_or_null() {
+                ' ' | '\n' | '\t' | '\r' => self.bump(),
+                '/' => {
+                    self.bump();
+                    match self.ch_or_null() {
+                        '/' => {
+                            // start single-line comment
+                            loop {
+                                self.bump();
+                                if self.eof() || self.ch == Some('\n') {
+                                    break;
+                                }
+                            }
+                        },
+                        '*' => {
+                            // start multi-line comment
+                            let mut last_star = false;
+                            loop {
+                                self.bump();
+                                if self.eof() {
+                                    // EOF while parsing milti-line comment
+                                    return Err(InvalidSyntax);
+                                }
+                                if last_star {
+                                    if self.ch == Some('/') {
+                                        self.bump();
+                                        break;
+                                    }
+                                }
+                                last_star = self.ch == Some('*');
+                            }
+                        },
+                        _ => return Err(InvalidSyntax)
+                    }
+                }
+                _ => break
+            }
+        }
+
+        Ok(())
     }
 
     fn parse_number(&mut self) -> JsonEvent {
@@ -523,7 +563,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
             // ParseArray(false) and ParseObject(false), which always return,
             // so there is no risk of getting stuck in an infinite loop.
             // All other paths return before the end of the loop's iteration.
-            self.parse_whitespace();
+            match self.parse_whitespace_or_comments() {
+                Err(e) => return self.error_event(e),
+                _ => ()
+            }
 
             match self.state {
                 ParseStart => {
@@ -654,7 +697,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
                 return Error(e);
             }
         };
-        self.parse_whitespace();
+        match self.parse_whitespace_or_comments() {
+            Err(e) => return self.error_event(e),
+            _ => ()
+        }
         if self.eof() {
             return self.error_event(EOFWhileParsingObject);
         } else if self.ch_or_null() != ':' {
@@ -662,7 +708,10 @@ impl<T: Iterator<Item = char>> Parser<T> {
         }
         self.stack.push_key(s);
         self.bump();
-        self.parse_whitespace();
+        match self.parse_whitespace_or_comments() {
+            Err(e) => return self.error_event(e),
+            _ => ()
+        }
 
         let val = self.parse_value();
 

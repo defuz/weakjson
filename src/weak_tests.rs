@@ -1,9 +1,24 @@
+use rustc_serialize::json::Json;
+
 use rustc_serialize::json::Json::*;
 
 use rustc_serialize::json::ErrorCode::*;
 use rustc_serialize::json::ParserError::*;
 
+use std::collections::BTreeMap;
 use std::f64;
+
+fn mk_object(items: &[(String, Json)]) -> Json {
+    let mut d = BTreeMap::new();
+
+    for item in items.iter() {
+        match *item {
+            (ref key, ref value) => { d.insert((*key).clone(), (*value).clone()); },
+        }
+    };
+
+    Object(d)
+}
 
 #[test]
 fn test_single_quote_string() {
@@ -100,6 +115,37 @@ fn test_hexadecimal() {
     assert_eq!(super::from_str("0x"), Err(SyntaxError(InvalidNumber, 1, 3)));
     assert_eq!(super::from_str("0x.0"), Err(SyntaxError(InvalidNumber, 1, 3)));
     assert_eq!(super::from_str("0xf.0"), Err(SyntaxError(TrailingCharacters, 1, 4)));
+}
+
+#[test]
+fn test_comments() {
+    assert_eq!(super::from_str("0 // comment"), Ok(U64(0)));
+    assert_eq!(super::from_str("0 // comment\n"), Ok(U64(0)));
+    assert_eq!(super::from_str("// comment\n0"), Ok(U64(0)));
+    assert_eq!(super::from_str(" // comment\n0"), Ok(U64(0)));
+    assert_eq!(super::from_str("// comment\n 0"), Ok(U64(0)));
+
+    assert_eq!(super::from_str("0 /* comment */"), Ok(U64(0)));
+    assert_eq!(super::from_str("0 // comment\n"), Ok(U64(0)));
+    assert_eq!(super::from_str("/* comment */ 0"), Ok(U64(0)));
+    assert_eq!(super::from_str("/**/0"), Ok(U64(0)));
+
+    assert_eq!(super::from_str("/* // */0"), Ok(U64(0)));
+
+    assert_eq!(super::from_str("/**/[/**/3/**/,/**/1/**/]/**/"),
+               Ok(Array(vec![U64(3), U64(1)])));
+
+    assert_eq!(super::from_str("/**/{/**/\"a\"/**/:/**/3/**/}/**/").unwrap(),
+               mk_object(&[("a".to_string(), U64(3))]));
+
+    assert_eq!(super::from_str("//c\n[//c\n3//c\n,//c\n1//c\n]//c\n"),
+               Ok(Array(vec![U64(3), U64(1)])));
+
+    assert_eq!(super::from_str("//c\n{//c\n\"a\"//c\n://c\n3//c\n}//c\n").unwrap(),
+               mk_object(&[("a".to_string(), U64(3))]));
+
+    assert_eq!(super::from_str("0/*"), Err(SyntaxError(InvalidSyntax, 1, 4)));
+    assert_eq!(super::from_str("/*/0"), Err(SyntaxError(InvalidSyntax, 1, 5)));
 }
 
 
