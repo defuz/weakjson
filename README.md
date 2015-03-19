@@ -6,13 +6,13 @@ The library is still under development. Please don't use it.
 
 ##### Comments:
 
-- [ ] Inline (single-line) comments are allowed.
-- [ ] Block (multi-line) comments are allowed.
+- [x] Inline (single-line) comments are allowed.
+- [x] Block (multi-line) comments are allowed.
 
 ##### Trailing commas:
 
 - [ ] Objects can have trailing commas.
-- [ ] Arrays can have trailing commas.
+- [x] Arrays can have trailing commas.
 
 ##### Object keys:
 

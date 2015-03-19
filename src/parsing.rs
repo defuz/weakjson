@@ -614,21 +614,22 @@ impl<T: Iterator<Item = char>> Parser<T> {
     fn parse_array(&mut self, first: bool) -> JsonEvent {
         if self.ch_is(']') {
             if !first {
-                self.error_event(InvalidSyntax)
-            } else {
-                self.state = if self.stack.is_empty() {
-                    ParseBeforeFinish
-                } else if self.stack.last_is_index() {
-                    ParseArrayComma
-                } else {
-                    ParseObjectComma
-                };
-                self.bump();
-                ArrayEnd
+                self.stack.pop();
             }
+            self.state = if self.stack.is_empty() {
+                ParseBeforeFinish
+            } else if self.stack.last_is_index() {
+                ParseArrayComma
+            } else {
+                ParseObjectComma
+            };
+            self.bump();
+            ArrayEnd
         } else {
             if first {
                 self.stack.push_index(0);
+            } else {
+                self.stack.bump_index();
             }
             let val = self.parse_value();
             self.state = match val {
@@ -643,7 +644,6 @@ impl<T: Iterator<Item = char>> Parser<T> {
 
     fn parse_array_comma_or_end(&mut self) -> Option<JsonEvent> {
         if self.ch_is(',') {
-            self.stack.bump_index();
             self.state = ParseArray(false);
             self.bump();
             None

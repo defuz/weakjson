@@ -170,7 +170,6 @@ fn test_read_array() {
     assert_eq!(super::from_str("["),     Err(SyntaxError(EOFWhileParsingValue, 1, 2)));
     assert_eq!(super::from_str("[1"),    Err(SyntaxError(EOFWhileParsingArray, 1, 3)));
     assert_eq!(super::from_str("[1,"),   Err(SyntaxError(EOFWhileParsingValue, 1, 4)));
-    assert_eq!(super::from_str("[1,]"),  Err(SyntaxError(InvalidSyntax,        1, 4)));
     assert_eq!(super::from_str("[6 7]"), Err(SyntaxError(InvalidSyntax,        1, 4)));
 
     assert_eq!(super::from_str("[]"), Ok(Array(vec![])));
@@ -487,7 +486,6 @@ fn test_read_array_streaming() {
     assert_eq!(super::from_str("["),     Err(SyntaxError(EOFWhileParsingValue, 1, 2)));
     assert_eq!(super::from_str("[1"),    Err(SyntaxError(EOFWhileParsingArray, 1, 3)));
     assert_eq!(super::from_str("[1,"),   Err(SyntaxError(EOFWhileParsingValue, 1, 4)));
-    assert_eq!(super::from_str("[1,]"),  Err(SyntaxError(InvalidSyntax,        1, 4)));
     assert_eq!(super::from_str("[6 7]"), Err(SyntaxError(InvalidSyntax,        1, 4)));
 
 }

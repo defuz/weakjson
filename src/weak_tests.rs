@@ -148,17 +148,14 @@ fn test_comments() {
     assert_eq!(super::from_str("/*/0"), Err(SyntaxError(InvalidSyntax, 1, 5)));
 }
 
+#[test]
+fn test_trailing_comma_in_array() {
+    assert_eq!(super::from_str("[1,]"), Ok(Array(vec![U64(1)])));
+    assert_eq!(super::from_str("[1, 2,]"), Ok(Array(vec![U64(1), U64(2)])));
 
-// #[test]
-// fn test_trailing_comma_in_array() {
-//     // assert_eq!(super::from_str("[,]"),  Err(SyntaxError(InvalidSyntax,        1, 4)));
-//     // assert_eq!(super::from_str("[,1]"),  Err(SyntaxError(InvalidSyntax,        1, 4)));
-//     // assert_eq!(super::from_str("[,,]"),  Err(SyntaxError(InvalidSyntax,        1, 4)));
-//     // assert_eq!(super::from_str("[1,,]"),  Err(SyntaxError(InvalidSyntax,        1, 4)));
-//     // assert_eq!(super::from_str("[1,,2]"),  Err(SyntaxError(InvalidSyntax,        1, 4)));
-
-//     assert_eq!(super::from_str("[1,]"),
-//                  Ok(Array(vec![U64(1)])));
-//     assert_eq!(super::from_str("[1, 2,]"),
-//                  Ok(Array(vec![U64(1), U64(2)])));
-// }
+    assert_eq!(super::from_str("[,]"), Err(SyntaxError(InvalidSyntax, 1, 2)));
+    assert_eq!(super::from_str("[,1]"), Err(SyntaxError(InvalidSyntax, 1, 2)));
+    assert_eq!(super::from_str("[,,]"), Err(SyntaxError(InvalidSyntax, 1, 2)));
+    assert_eq!(super::from_str("[1,,]"), Err(SyntaxError(InvalidSyntax, 1, 4)));
+    assert_eq!(super::from_str("[1,,2]"), Err(SyntaxError(InvalidSyntax, 1, 4)));
+}
