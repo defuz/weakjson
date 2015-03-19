@@ -668,9 +668,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
     fn parse_object(&mut self, first: bool) -> JsonEvent {
         if self.ch_is('}') {
             if !first {
-                if self.stack.is_empty() {
-                    return self.error_event(TrailingComma);
-                } else {
+                if !self.stack.is_empty() {
                     self.stack.pop();
                 }
             }

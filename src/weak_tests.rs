@@ -159,3 +159,17 @@ fn test_trailing_comma_in_array() {
     assert_eq!(super::from_str("[1,,]"), Err(SyntaxError(InvalidSyntax, 1, 4)));
     assert_eq!(super::from_str("[1,,2]"), Err(SyntaxError(InvalidSyntax, 1, 4)));
 }
+
+#[test]
+fn test_trailing_comma_in_object() {
+    assert_eq!(super::from_str("{\"a\": 1,}").unwrap(),
+               mk_object(&[("a".to_string(), U64(1))]));
+    assert_eq!(super::from_str("{\"a\":1, \"b\":2,}").unwrap(),
+               mk_object(&[("a".to_string(), U64(1)), ("b".to_string(), U64(2))]));
+
+    assert_eq!(super::from_str("{,}"), Err(SyntaxError(KeyMustBeAString, 1, 2)));
+    assert_eq!(super::from_str("{,\"a\": 1}"), Err(SyntaxError(KeyMustBeAString, 1, 2)));
+    assert_eq!(super::from_str("{,,}"), Err(SyntaxError(KeyMustBeAString, 1, 2)));
+    assert_eq!(super::from_str("{\"a\": 1,,}"), Err(SyntaxError(KeyMustBeAString, 1, 9)));
+    assert_eq!(super::from_str("{\"a\": 1,, \"a\": 2}"), Err(SyntaxError(KeyMustBeAString, 1, 9)));
+}
