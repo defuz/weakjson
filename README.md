@@ -11,7 +11,7 @@ The library is still under development. Please don't use it.
 
 ##### Trailing commas:
 
-- [ ] Objects can have trailing commas.
+- [x] Objects can have trailing commas.
 - [x] Arrays can have trailing commas.
 
 ##### Object keys:
