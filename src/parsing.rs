@@ -234,43 +234,50 @@ impl<T: Iterator<Item = char>> Parser<T> {
                     f64::INFINITY
                 }
             )),
-            '.' => {
-                self.bump();
-
-                // Make sure a digit follows the decimal place.
-                match self.ch_or_null() {
-                    '0' ... '9' => (),
-                     _ => return Error(SyntaxError(InvalidNumber, self.line, self.col))
-                }
-
-                let mut res = self.parse_decimal(0.0);
-
-                if self.ch_is('e') || self.ch_is('E') {
-                    self.bump();
-                    res = match self.parse_exponent(res) {
-                        Ok(res) => res,
-                        Err(e) => { return Error(e); }
-                    };
-                }
-
-                if neg {
-                    res *= -1.0;
-                }
-
-                F64Value(res)
-            }
             _ => {
 
-                let res = match self.parse_u64() {
-                    Ok(res) => res,
-                    Err(e) => { return Error(e); }
+                let mut has_digits = match self.ch_or_null() {
+                    '0' ... '9' => true,
+                    _ => false
                 };
 
-                if self.ch_is('.') || self.ch_is('e') || self.ch_is('E') {
+                let leading_zero = if self.ch_is('0') {
+                    self.bump();
+                    true
+                } else {
+                    false
+                };
+
+                let hexadecimal = leading_zero && (self.ch_is('x') || self.ch_is('X'));
+
+                let res = if hexadecimal {
+                    self.bump();
+                    match self.parse_hexadecimal() {
+                        Ok(res) => res,
+                        Err(e) => { return Error(e); }
+                    }
+                } else {
+                    match self.parse_u64() {
+                        Ok(res) => res,
+                        Err(e) => { return Error(e); }
+                    }
+                };
+
+                if !hexadecimal && (self.ch_is('.') || self.ch_is('e') || self.ch_is('E')) {
                     let mut res = res as f64;
 
                     if self.ch_is('.') {
                         self.bump();
+
+                        has_digits = has_digits || match self.ch_or_null() {
+                            '0' ... '9' => true,
+                            _ => false
+                        };
+
+                        if !has_digits {
+                            return Error(SyntaxError(InvalidNumber, self.line, self.col));
+                        }
+
                         res = self.parse_decimal(res)
                     }
 
@@ -288,6 +295,9 @@ impl<T: Iterator<Item = char>> Parser<T> {
 
                     F64Value(res)
                 } else {
+                    if !has_digits {
+                        return Error(SyntaxError(InvalidNumber, self.line, self.col));
+                    }
                     if neg {
                         let res = -(res as i64);
 
@@ -308,29 +318,53 @@ impl<T: Iterator<Item = char>> Parser<T> {
     fn parse_u64(&mut self) -> Result<u64, ParserError> {
         let mut accum = 0;
 
-        match self.ch_or_null() {
-            '0' ... '9' => {
-                while !self.eof() {
-                    match self.ch_or_null() {
-                        c @ '0' ... '9' => {
-                            macro_rules! try_or_invalid {
-                                ($e: expr) => {
-                                    match $e {
-                                        Some(v) => v,
-                                        None => return self.error(InvalidNumber)
-                                    }
-                                }
+        while !self.eof() {
+            match self.ch_or_null() {
+                c @ '0' ... '9' => {
+                    macro_rules! try_or_invalid {
+                        ($e: expr) => {
+                            match $e {
+                                Some(v) => v,
+                                None => return self.error(InvalidNumber)
                             }
-                            accum = try_or_invalid!(accum.checked_mul(10));
-                            accum = try_or_invalid!(accum.checked_add((c as u64) - ('0' as u64)));
-
-                            self.bump();
                         }
-                        _ => break,
                     }
+                    accum = try_or_invalid!(accum.checked_mul(10));
+                    accum = try_or_invalid!(accum.checked_add((c as u64) - ('0' as u64)));
+
+                    self.bump();
                 }
+                _ => break,
             }
-            _ => return self.error(InvalidNumber),
+        }
+
+        Ok(accum)
+    }
+
+    fn parse_hexadecimal(&mut self) -> Result<u64, ParserError> {
+
+        if !self.ch_or_null().is_digit(16) {
+            return self.error(InvalidNumber);
+        }
+
+        let mut accum = 0;
+        while !self.eof() {
+            match self.ch_or_null().to_digit(16) {
+                Some(c) => {
+                    macro_rules! try_or_invalid {
+                        ($e: expr) => {
+                            match $e {
+                                Some(v) => v,
+                                None => return self.error(InvalidNumber)
+                            }
+                        }
+                    }
+                    accum = try_or_invalid!(accum.checked_mul(16));
+                    accum = try_or_invalid!(accum.checked_add(c as u64));
+                    self.bump();
+                }
+                None => break,
+            }
         }
 
         Ok(accum)

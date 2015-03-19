@@ -85,7 +85,23 @@ fn test_leading_and_trailing_decimal_point() {
 
     assert_eq!(super::json_from_str_non_strict("3.e5"), Ok(F64(3.0e5)));
     assert_eq!(super::json_from_str_non_strict(".1e5"), Ok(F64(0.1e5)));
+
+    assert_eq!(super::json_from_str_non_strict(".e5"), Err(SyntaxError(InvalidNumber, 1, 2)));
+    assert_eq!(super::json_from_str_non_strict("e5"), Err(SyntaxError(InvalidSyntax, 1, 1)));
 }
+
+#[test]
+fn test_hexadecimal() {
+    assert_eq!(super::json_from_str_non_strict("0xff"), Ok(U64(255)));
+    assert_eq!(super::json_from_str_non_strict("0xFF"), Ok(U64(255)));
+    assert_eq!(super::json_from_str_non_strict("0Xff"), Ok(U64(255)));
+    assert_eq!(super::json_from_str_non_strict("-0Xff"), Ok(I64(-255)));
+
+    assert_eq!(super::json_from_str_non_strict("0x"), Err(SyntaxError(InvalidNumber, 1, 3)));
+    assert_eq!(super::json_from_str_non_strict("0x.0"), Err(SyntaxError(InvalidNumber, 1, 3)));
+    assert_eq!(super::json_from_str_non_strict("0xf.0"), Err(SyntaxError(TrailingCharacters, 1, 4)));
+}
+
 
 // #[test]
 // fn test_trailing_comma_in_array() {

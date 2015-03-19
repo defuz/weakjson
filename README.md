@@ -23,6 +23,7 @@ The library is still under development. Please don't use it.
 
 - [x] Strings can be single-quoted.
 - [x] Ignore invalid escaping.
+- [x] Strings can contain unescaped control characters
 - [x] Strings can be split across multiple lines.
 
 ##### Numbers:
@@ -31,4 +32,4 @@ The library is still under development. Please don't use it.
 - [x] Numbers can begin with an explicit plus sign.
 - [x] Numbers can begin with leading zero digits.
 - [x] Numbers can begin or end with a (leading or trailing) decimal point.
-- [ ] Numbers can be hexadecimal (base 16).
+- [x] Numbers can be hexadecimal (base 16).
