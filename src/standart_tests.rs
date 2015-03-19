@@ -561,6 +561,18 @@ fn bench_small(b: &mut Bencher) {
     });
 }
 
+#[bench]
+fn bench_decode_hex_escape(b: &mut Bencher) {
+    let mut src = "\"".to_string();
+    for _ in 0..10 {
+        src.push_str("\\uF975\\uf9bc\\uF9A0\\uF9C4\\uF975\\uf9bc\\uF9A0\\uF9C4");
+    }
+    src.push_str("\"");
+    b.iter( || {
+        let _ = Json::from_str(&src);
+    });
+}
+
 fn big_json() -> string::String {
     let mut src = "[\n".to_string();
     for _ in 0..500 {
