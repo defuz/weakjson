@@ -665,6 +665,44 @@ impl<T: Iterator<Item = char>> Parser<T> {
         }
     }
 
+    fn parse_object_key(&mut self) -> Result<String, ParserError> {
+        match self.ch_or_null() {
+            '0' ... '9' => {
+                let mut s = String::new();
+                let mut leading_zero = true;
+                loop {
+                    match self.ch_or_null() {
+                        '0' if leading_zero => self.bump(),
+                        c @ '0' ... '9' => {
+                            s.push(c);
+                            self.bump();
+                            leading_zero = false;
+                        },
+                        _ => break
+                    }
+                }
+                Ok(s)
+            },
+            'a' ... 'z' | 'A' ... 'Z' | '_' | '$' => {
+                let mut s = String::new();
+                loop {
+                    let c = self.ch_or_null();
+                    match c {
+                        'a' ... 'z' | 'A' ... 'Z' |
+                        '0' ... '9' | '_' | '$' => {
+                            s.push(c);
+                            self.bump();
+                        },
+                        _ => break
+                    }
+                }
+                Ok(s)
+            },
+            '"' | '\'' => self.parse_str(),
+            _ => self.error(InvalidSyntax)
+        }
+    }
+
     fn parse_object(&mut self, first: bool) -> JsonEvent {
         if self.ch_is('}') {
             if !first {
@@ -685,10 +723,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
         if self.eof() {
             return self.error_event(EOFWhileParsingObject);
         }
-        if !self.ch_is('"') && !self.ch_is('\'') {
-            return self.error_event(KeyMustBeAString);
-        }
-        let s = match self.parse_str() {
+        let s = match self.parse_object_key() {
             Ok(s) => s,
             Err(e) => {
                 self.state = ParseFinished;

@@ -226,7 +226,7 @@ fn test_decode_tuple_malformed_length() {
 fn test_read_object() {
     assert_eq!(super::from_str("{"),       Err(SyntaxError(EOFWhileParsingObject, 1, 2)));
     assert_eq!(super::from_str("{ "),      Err(SyntaxError(EOFWhileParsingObject, 1, 3)));
-    assert_eq!(super::from_str("{1"),      Err(SyntaxError(KeyMustBeAString,      1, 2)));
+    assert_eq!(super::from_str("{1"),      Err(SyntaxError(EOFWhileParsingObject, 1, 3)));
     assert_eq!(super::from_str("{ \"a\""), Err(SyntaxError(EOFWhileParsingObject, 1, 6)));
     assert_eq!(super::from_str("{\"a\""),  Err(SyntaxError(EOFWhileParsingObject, 1, 5)));
     assert_eq!(super::from_str("{\"a\" "), Err(SyntaxError(EOFWhileParsingObject, 1, 6)));
@@ -339,7 +339,7 @@ fn last_event(src: &str) -> JsonEvent {
 #[cfg_attr(target_word_size = "32", ignore)] // FIXME(#14064)
 fn test_read_object_streaming() {
     assert_eq!(last_event("{ "),      Error(SyntaxError(EOFWhileParsingObject, 1, 3)));
-    assert_eq!(last_event("{1"),      Error(SyntaxError(KeyMustBeAString,      1, 2)));
+    assert_eq!(last_event("{1"),      Error(SyntaxError(EOFWhileParsingObject, 1, 3)));
     assert_eq!(last_event("{ \"a\""), Error(SyntaxError(EOFWhileParsingObject, 1, 6)));
     assert_eq!(last_event("{\"a\""),  Error(SyntaxError(EOFWhileParsingObject, 1, 5)));
     assert_eq!(last_event("{\"a\" "), Error(SyntaxError(EOFWhileParsingObject, 1, 6)));

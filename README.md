@@ -16,8 +16,8 @@ The library is still under development. Please don't use it.
 
 ##### Object keys:
 
-- [ ] Object keys can be unquoted if they're valid identifiers.
-- [ ] Objects can have numeric keys.
+- [x] Object keys can be unquoted if they're valid identifiers.
+- [x] Objects can have natural numbers keys.
 
 ##### Strings:
 

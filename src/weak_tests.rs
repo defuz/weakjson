@@ -167,9 +167,29 @@ fn test_trailing_comma_in_object() {
     assert_eq!(super::from_str("{\"a\":1, \"b\":2,}").unwrap(),
                mk_object(&[("a".to_string(), U64(1)), ("b".to_string(), U64(2))]));
 
-    assert_eq!(super::from_str("{,}"), Err(SyntaxError(KeyMustBeAString, 1, 2)));
-    assert_eq!(super::from_str("{,\"a\": 1}"), Err(SyntaxError(KeyMustBeAString, 1, 2)));
-    assert_eq!(super::from_str("{,,}"), Err(SyntaxError(KeyMustBeAString, 1, 2)));
-    assert_eq!(super::from_str("{\"a\": 1,,}"), Err(SyntaxError(KeyMustBeAString, 1, 9)));
-    assert_eq!(super::from_str("{\"a\": 1,, \"a\": 2}"), Err(SyntaxError(KeyMustBeAString, 1, 9)));
+    assert_eq!(super::from_str("{,}"), Err(SyntaxError(InvalidSyntax, 1, 2)));
+    assert_eq!(super::from_str("{,\"a\": 1}"), Err(SyntaxError(InvalidSyntax, 1, 2)));
+    assert_eq!(super::from_str("{,,}"), Err(SyntaxError(InvalidSyntax, 1, 2)));
+    assert_eq!(super::from_str("{\"a\": 1,,}"), Err(SyntaxError(InvalidSyntax, 1, 9)));
+    assert_eq!(super::from_str("{\"a\": 1,, \"a\": 2}"), Err(SyntaxError(InvalidSyntax, 1, 9)));
+}
+
+#[test]
+fn test_unquoted_keys_in_object() {
+    assert_eq!(super::from_str("{a: 1}").unwrap(), mk_object(&[("a".to_string(), U64(1))]));
+    assert_eq!(super::from_str("{$a: 1}").unwrap(), mk_object(&[("$a".to_string(), U64(1))]));
+    assert_eq!(super::from_str("{_1: 1}").unwrap(), mk_object(&[("_1".to_string(), U64(1))]));
+
+    assert_eq!(super::from_str("{ф: 1}"), Err(SyntaxError(InvalidSyntax, 1, 2)));
+}
+
+#[test]
+fn test_numeric_keys_in_object() {
+    assert_eq!(super::from_str("{1: 1}").unwrap(), mk_object(&[("1".to_string(), U64(1))]));
+    assert_eq!(super::from_str("{01: 1}").unwrap(), mk_object(&[("1".to_string(), U64(1))]));
+    assert_eq!(super::from_str("{123: 1}").unwrap(), mk_object(&[("123".to_string(), U64(1))]));
+
+    assert_eq!(super::from_str("{0a: 1}"), Err(SyntaxError(ExpectedColon, 1, 3)));
+    assert_eq!(super::from_str("{0.2: 1}"), Err(SyntaxError(ExpectedColon, 1, 3)));
+    assert_eq!(super::from_str("{-3: 1}"), Err(SyntaxError(InvalidSyntax, 1, 2)));
 }
