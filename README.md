@@ -25,9 +25,9 @@ Decodes a json value from an `&mut io::Read`:
 pub fn from_reader(rdr: &mut Read) -> Result<Json, BuilderError>
 ```
 
-##### Comments:
+#### What is the difference with the standard JSON?
 
-Both inline (single-line) and block (multi-line) comments are allowed:
+Both inline (single-line) and block (multi-line) **comments** are allowed:
 
 ```javascript
 {
@@ -42,9 +42,7 @@ Both inline (single-line) and block (multi-line) comments are allowed:
 }
 ```
 
-##### Object keys:
-
-Object keys can be unquoted if they're valid identifiers or it's can be natural numbers:
+**Object keys** can be unquoted if they're valid identifiers or it's can be natural numbers:
 
 ```javascript
 {
@@ -54,24 +52,20 @@ Object keys can be unquoted if they're valid identifiers or it's can be natural 
 }
 ```
 
-##### Trailing commas:
-
-Objects and arrays can have trailing commas:
+Objects and arrays can have **trailing commas**:
 
 ```javascript
 {
     oh: [
         "we shouldn't forget",
         "arrays can have",
-        "trailing commas too",
+        "trailing commas",
     ],
     finally: "a trailing comma",
 }
 ```
 
-##### Strings:
-
-Strings can be single-quoted and contain unescaped control characters like '\n' or '\t'.
+**Strings** can be single-quoted and contain unescaped control characters like '\n' or '\t'.
 Therefore, we can split string across multiple lines:
 
 ```javascript
@@ -82,18 +76,16 @@ multi-line string",
     "Here is another \
 multi-line string with ignored backslash",
 
-    'And say "Hello single-quoted string!"'
+    'And say "hello" to single-quoted string!'
 ]
 ```
 
 Weakjson ignore invalid escaping like `\f` so that it will be simple `f`.
 
-##### Numbers:
-
-Numbers can include `Infinity`, `-Infinity`, `NaN`, and `-NaN`,
-begin with an explicit plus sign,
+**Numbers** can include `Infinity`, `-Infinity`, `NaN`, and `-NaN`,
+can begin with an explicit plus sign,
 begin with leading zero digits,
-begin or end with a (leading or trailing) decimal point,
+begin or end with a (leading or trailing) decimal point or
 be hexadecimal (base 16):
 
 ```javascript
