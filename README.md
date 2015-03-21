@@ -6,30 +6,83 @@ The library is still under development. Please don't use it.
 
 ##### Comments:
 
-- [x] Inline (single-line) comments are allowed.
-- [x] Block (multi-line) comments are allowed.
+Both inline (single-line) and block (multi-line) comments are allowed:
+
+```
+{
+    // this is an inline comment
+    foo: 'bar', // inline comment
+
+    /* this is a block comment
+       that continues on another line */
+}
+```
 
 ##### Trailing commas:
 
-- [x] Objects can have trailing commas.
-- [x] Arrays can have trailing commas.
+Objects and arrays can have trailing commas:
+
+```
+{
+    oh: [
+        "we shouldn't forget",
+        'arrays can have',
+        'trailing commas too',
+    ],
+    finally: 'a trailing comma',
+}
+```
+
 
 ##### Object keys:
 
-- [x] Object keys can be unquoted if they're valid identifiers.
-- [x] Objects can have natural numbers keys.
+Object keys can be unquoted if they're valid identifiers or it's can be natural numbers:
 
+```
+{
+    foo: 'bar',
+    while: true,
+    sparse: {0: "Yankee", 273: "Hotel", 38: "Foxtrot"}
+}
+```
 ##### Strings:
 
-- [x] Strings can be single-quoted.
-- [x] Ignore invalid escaping.
-- [x] Strings can contain unescaped control characters
-- [x] Strings can be split across multiple lines.
+Strings can be single-quoted and contain unescaped control characters like '\n' or '\t'.
+Therefore, we can split string across multiple lines:
+
+```
+{
+    "this": "is a \
+multi-line string",
+
+    "here": 'is another
+multi-line string too',
+
+    'and': 'Say "Hello single-quoted string!"',
+}
+```
+
+Weakjson ignore invalid escaping like `\f` so that it will be simple `f`.
 
 ##### Numbers:
 
-- [x] Numbers can include Infinity, -Infinity, NaN, and -NaN.
-- [x] Numbers can begin with an explicit plus sign.
-- [x] Numbers can begin with leading zero digits.
-- [x] Numbers can begin or end with a (leading or trailing) decimal point.
-- [x] Numbers can be hexadecimal (base 16).
+Numbers can include `Infinity`, `-Infinity`, `NaN`, and `-NaN`,
+begin with an explicit plus sign,
+begin with leading zero digits,
+begin or end with a (leading or trailing) decimal point,
+be hexadecimal (base 16).
+
+```
+[
+    Infinity,  // f64::INFINITY
+    -Infinity, // f64::NEG_INFINITY
+    NaN,       // f64::NAN
+    -NaN,      // f64::NAN
+
+    +42,       // 42
+    042,       // 42
+    .42,       // 0.42
+    42.,       // 42.0
+    0x2A       // 42
+]
+```
