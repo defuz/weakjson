@@ -25,7 +25,7 @@ Decodes a json value from an `&mut io::Read`:
 pub fn from_reader(rdr: &mut Read) -> Result<Json, BuilderError>
 ```
 
-#### What is the difference with the standard JSON?
+#### What is the difference with the standard JSON
 
 Both inline (single-line) and block (multi-line) **comments** are allowed:
 
@@ -65,7 +65,7 @@ Objects and arrays can have **trailing commas**:
 }
 ```
 
-**Strings** can be single-quoted and contain unescaped control characters like '\n' or '\t'.
+**Strings** can be single-quoted and contain unescaped control characters like `\n` or `\t`.
 Therefore, we can split string across multiple lines:
 
 ```javascript
