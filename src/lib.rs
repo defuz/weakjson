@@ -1,6 +1,6 @@
 #![cfg_attr(test, feature(test))]
 
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 #[cfg(test)]
 extern crate test;
