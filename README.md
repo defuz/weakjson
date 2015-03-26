@@ -65,7 +65,7 @@ Objects and arrays can have **trailing commas**:
 }
 ```
 
-**Strings** can be single-quoted and contain unescaped control characters like `\n` or `\t`.
+**Strings** can be single-quoted and contain unescaped control characters like linebreaks or tabulation.
 Therefore, we can split string across multiple lines:
 
 ```javascript
