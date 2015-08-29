@@ -1,9 +1,4 @@
-#![cfg_attr(test, feature(test))]
-
 extern crate rustc_serialize;
-
-#[cfg(test)]
-extern crate test;
 
 mod parsing;
 
@@ -12,6 +7,7 @@ mod standart_tests;
 
 #[cfg(test)]
 mod weak_tests;
+
 
 use parsing::{Builder};
 

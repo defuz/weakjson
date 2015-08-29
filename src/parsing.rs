@@ -12,8 +12,7 @@ use parsing::ParserState::*;
 use parsing::InternalStackElement::*;
 
 use std::collections::BTreeMap;
-use std::num::{Float, Int};
-use std::{char, str, mem, f64};
+use std::{char, str, mem, i64, f64};
 
 #[derive(PartialEq, Debug)]
 enum ParserState {
@@ -339,13 +338,11 @@ impl<T: Iterator<Item = char>> Parser<T> {
                         return Error(SyntaxError(InvalidNumber, self.line, self.col));
                     }
                     if neg {
-                        let res = -(res as i64);
-
-                        // Make sure we didn't underflow.
-                        if res > 0 {
+                        // Make sure we don't underflow.
+                        if res > (i64::MAX as u64) + 1 {
                             Error(SyntaxError(InvalidNumber, self.line, self.col))
                         } else {
-                            I64Value(res)
+                            I64Value((!res + 1) as i64)
                         }
                     } else {
                         U64Value(res)
@@ -356,7 +353,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
     }
 
     fn parse_u64(&mut self) -> Result<u64, ParserError> {
-        let mut accum = 0;
+        let mut accum: u64 = 0;
 
         while !self.eof() {
             match self.ch_or_null() {
@@ -387,7 +384,7 @@ impl<T: Iterator<Item = char>> Parser<T> {
             return self.error(InvalidNumber);
         }
 
-        let mut accum = 0;
+        let mut accum: u64 = 0;
         while !self.eof() {
             match self.ch_or_null().to_digit(16) {
                 Some(c) => {
@@ -830,10 +827,10 @@ impl<T: Iterator<Item = char>> Builder<T> {
         self.bump();
         let result = self.build_value();
         self.bump();
-        match self.token {
+        match self.token.take() {
             None => {}
-            Some(Error(ref e)) => { return Err(e.clone()); }
-            ref tok => { panic!("unexpected token {:?}", tok.clone()); }
+            Some(Error(e)) => { return Err(e); }
+            ref tok => { panic!("unexpected token {:?}", tok); }
         }
         result
     }
@@ -843,7 +840,7 @@ impl<T: Iterator<Item = char>> Builder<T> {
     }
 
     fn build_value(&mut self) -> Result<Json, BuilderError> {
-        return match self.token {
+        return match self.token.take() {
             Some(NullValue) => Ok(Json::Null),
             Some(I64Value(n)) => Ok(Json::I64(n)),
             Some(U64Value(n)) => Ok(Json::U64(n)),
@@ -854,7 +851,7 @@ impl<T: Iterator<Item = char>> Builder<T> {
                 mem::swap(s, &mut temp);
                 Ok(Json::String(temp))
             }
-            Some(Error(ref e)) => Err(e.clone()),
+            Some(Error(e)) => Err(e),
             Some(ArrayStart) => self.build_array(),
             Some(ObjectStart) => self.build_object(),
             Some(ObjectEnd) => self.parser.error(InvalidSyntax),
@@ -868,7 +865,7 @@ impl<T: Iterator<Item = char>> Builder<T> {
         let mut values = Vec::new();
 
         loop {
-            if self.token == Some(ArrayEnd) {
+            if let Some(ArrayEnd) = self.token {
                 return Ok(Json::Array(values.into_iter().collect()));
             }
             match self.build_value() {
@@ -885,11 +882,11 @@ impl<T: Iterator<Item = char>> Builder<T> {
         let mut values = BTreeMap::new();
 
         loop {
-            match self.token {
+            match self.token.take() {
                 Some(ObjectEnd) => { return Ok(Json::Object(values)); }
-                Some(Error(ref e)) => { return Err(e.clone()); }
+                Some(Error(e)) => { return Err(e); }
                 None => { break; }
-                _ => {}
+                token => { self.token = token; }
             }
             let key = match self.parser.stack().top() {
                 Some(StackElement::Key(k)) => { k.to_string() }

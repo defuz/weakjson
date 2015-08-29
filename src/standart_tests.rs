@@ -1,5 +1,3 @@
-use super::test::Bencher;
-
 use rustc_serialize::json::Json::*;
 use rustc_serialize::json::ErrorCode::*;
 use rustc_serialize::json::ParserError::*;
@@ -127,7 +125,11 @@ fn test_decode_numbers() {
     assert_eq!(v, i64::MAX);
 
     let res: DecodeResult<i64> = super::decode("765.25252");
-    assert_eq!(res, Err(ExpectedError("Integer".to_string(), "765.25252".to_string())));
+    match res {
+        Ok(..) => panic!("expected an error"),
+        Err(ExpectedError(ref s, _)) => assert_eq!(s, "Integer"),
+        Err(..) => panic!("expected an 'expected integer' error"),
+    }
 }
 
 #[test]
@@ -511,90 +513,43 @@ fn test_read_identifiers_streaming() {
     assert_eq!(last_event("faz"),  Error(SyntaxError(InvalidSyntax, 1, 3)));
 }
 
-// fixme: uncomment this
-// #[test]
-// fn test_bad_json_stack_depleted() {
-//     #[derive(Debug, RustcDecodable)]
-//     enum ChatEvent {
-//         Variant(i32)
-//     }
-//     let serialized = "{\"variant\": \"Variant\", \"fields\": []}";
-//     let r: Result<ChatEvent, _> = super::decode(serialized);
-//     assert!(r.unwrap_err() == EOF);
-// }
-
-#[bench]
-fn bench_streaming_small(b: &mut Bencher) {
-    b.iter( || {
-        let mut parser = Parser::new(
-            r#"{
-                "a": 1.0,
-                "b": [
-                    true,
-                    "foo\nbar",
-                    { "c": {"d": null} }
-                ]
-            }"#.chars()
-        );
-        loop {
-            match parser.next() {
-                None => return,
-                _ => {}
-            }
-        }
-    });
-}
-#[bench]
-fn bench_small(b: &mut Bencher) {
-    b.iter( || {
-        let _ = super::from_str(r#"{
-            "a": 1.0,
-            "b": [
-                true,
-                "foo\nbar",
-                { "c": {"d": null} }
-            ]
-        }"#);
-    });
-}
-
-#[bench]
-fn bench_decode_hex_escape(b: &mut Bencher) {
-    let mut src = "\"".to_string();
-    for _ in 0..10 {
-        src.push_str("\\uF975\\uf9bc\\uF9A0\\uF9C4\\uF975\\uf9bc\\uF9A0\\uF9C4");
+#[test]
+fn test_bad_json_stack_depleted() {
+    #[derive(Debug, RustcDecodable)]
+    enum ChatEvent {
+        Variant(i32)
     }
-    src.push_str("\"");
-    b.iter( || {
-        let _ = super::from_str(&src);
-    });
+    let serialized = "{\"variant\": \"Variant\", \"fields\": []}";
+    let r: Result<ChatEvent, _> = super::decode(serialized);
+    assert!(r.unwrap_err() == EOF);
 }
 
-fn big_json() -> string::String {
-    let mut src = "[\n".to_string();
-    for _ in 0..500 {
-        src.push_str(r#"{ "a": true, "b": null, "c":3.1415, "d": "Hello world", "e": \
-                        [1,2,3]},"#);
+#[test]
+fn test_decode_phantom_data() {
+    use std::marker::PhantomData;
+    #[derive(Debug, RustcDecodable, RustcEncodable, Eq, PartialEq)]
+    struct Foo<P> {
+        phantom_data: PhantomData<P>
     }
-    src.push_str("{}]");
-    return src;
+
+    let f: Foo<u8> = Foo {
+        phantom_data: PhantomData
+    };
+    assert_eq!(f, super::decode("{}").unwrap());
 }
 
-#[bench]
-fn bench_streaming_large(b: &mut Bencher) {
-    let src = big_json();
-    b.iter( || {
-        let mut parser = Parser::new(src.chars());
-        loop {
-            match parser.next() {
-                None => return,
-                _ => {}
-            }
-        }
-    });
-}
-#[bench]
-fn bench_large(b: &mut Bencher) {
-    let src = big_json();
-    b.iter( || { let _ = super::from_str(&src); });
+#[test]
+fn test_decode_fixed_length_array() {
+    #[derive(Debug, RustcDecodable, RustcEncodable, Eq, PartialEq)]
+    struct Foo {
+        a: [u8; 1],
+        b: [i32; 2],
+        c: [u64; 3],
+         }
+    let f = Foo {
+        a: [0],
+        b: [1, 2],
+        c: [3, 4, 5],
+    };
+    assert_eq!(f, super::decode("{\"a\": [0], \"b\": [1, 2], \"c\": [3, 4, 5]}").unwrap());
 }
